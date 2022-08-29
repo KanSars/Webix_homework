@@ -1,4 +1,6 @@
 //TODO: кнопку сохнарить активная/неактивная в зависимости от процесса редактирования
+//получить значение чекбокса
+//попробовать раскидать по файлам
 
 const Locale = {
     addUser: 'Добавить пользователя',
@@ -24,6 +26,7 @@ const UI = {
     view: 'layout',
     cols: [
         {
+            width: 500,
             rows: [
                 { view: 'template', type: 'header', template: Locale.addUser },
                 {
@@ -69,7 +72,7 @@ const UI = {
                         { id: 'email', header: Locale.email, width: 90 },
                         { id: 'phone', header: Locale.phone, width: 90 },
                         {
-                            id: 'head', header: Locale.head, width: 90,
+                            id: 'head', header: Locale.head, width: 120,
                             template: item => item.head ? 'Да' : 'Нет'
                         },
                         {
@@ -77,10 +80,21 @@ const UI = {
                             template: item => Controller.getDivisionById(+item.division)
                         },
                         {
-                            view: 'button', id: 'deleteUser', header: Locale.delete, width: 100,
 
+                            //Для варианта кнопки удаления определенного пользователя
+                            /*
                             template: function (item) {
                                 return '<button onclick=Model.deleteItem(' + item.id + ')>' + Locale.delete + '</button>'
+                            }
+                            */
+
+                            view: 'checkbox', name: 'isForDelete',
+                            labelWidth: 120,
+
+                            template: function (item) {
+                                return '<input onchange=Model.checkForDelete(' + item.id + ') type="checkbox">'
+                                //return '<input onchange=checkItem(' + item.id + ') type="checkbox">'
+
                             }
                         },
                         {
@@ -93,6 +107,10 @@ const UI = {
                 },
                 {
                     rows: [
+                        {
+                            view: 'button', id: 'deleteUsersBtn', value: Locale.delete,
+                            css: 'webix_primary'
+                        },
                         //{ view: 'text', name: 'find', label: Locale.phone, labelWidth: 120, },
                         //{ view: 'text', name: 'find', label: Locale.phone, labelWidth: 120, },
                         {
@@ -138,11 +156,12 @@ const Controller = {
     initElements() {
         this.elements.userForm = $$('userForm')
         this.elements.addUserBtn = $$('addUserBtn')
-        this.elements.deleteUserBtn = $$('deleteUserBtn')
+        this.elements.deleteUsersBtn = $$('deleteUsersBtn')
         this.elements.saveUserBtn = $$('saveUserBtn')
         this.elements.usersTable = $$('usersTable')
         this.elements.userTable = $$('userTable')
         this.elements.searchForm = $$('searchForm')
+
     },
 
     initEvents() {
@@ -159,6 +178,10 @@ const Controller = {
             console.log('update!');
 
             Model.saveItem(this.elements.userForm.getValues());
+        })
+
+        this.elements.deleteUsersBtn.attachEvent('onItemClick', () => {
+            Model.deleteItems();
         })
 
         this.elements.searchForm.attachEvent('onEnter', () => {
@@ -198,7 +221,23 @@ const Controller = {
 
 const Model = {
 
-    data: [],
+    user: {
+        division: 1,
+        email: 'asd@mail.ru',
+        fia: 'tarakan',
+        head: 1,
+        id: 12312312323,
+        phone: 79171232323
+    },
+
+    data: [{
+        division: 1,
+        email: 'asd@mail.ru',
+        fia: 'tarakan',
+        head: 1,
+        id: 123123123323,
+        phone: 791712332323
+    }],
 
     isExists(item) {
         return this.data.find(dataItem => dataItem.phone == item.phone);
@@ -207,7 +246,7 @@ const Model = {
     addItem(item) {
         if (!this.isExists(item)) {
             this.data.push(item)
-            //console.log('adddata this.data=', this.data);
+            console.log('adddata this.data=', this.data);
             Controller.refreshTable(this.data)
         }
     },
@@ -252,6 +291,30 @@ const Model = {
         Controller.refreshTable(this.data)
         console.log('this.data= ', this.data);
     },
+
+    deleteItems() {
+        // простая инициализация
+        webix.confirm("Подтвердите, пожалуйста, удаление")
+            .then(() => {
+                for (let i = 0; i < this.data.length; i++) {
+                    if (this.data[i].isForDelete) {
+                        this.data.splice(i, 1)
+                    }
+                }
+                Controller.refreshTable(this.data)
+                console.log('this.data= ', this.data);
+            })
+    },
+
+    checkForDelete(itemId) {
+        console.log('itemId= ', itemId);
+        for (let i = 0; i < this.data.length; i++) {
+            if (this.data[i].id === itemId) {
+                !this.data[i].isForDelete ? this.data[i].isForDelete = true : this.data[i].isForDelete = !this.data[i].isForDelete;
+            }
+        }
+    },
+
 
     updateItem(itemId) {
         let user = this.data.find(item => item.id == itemId);
