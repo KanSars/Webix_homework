@@ -59,12 +59,14 @@ const UI = {
                     view: 'button', id: 'saveUserBtn', value: Locale.save,
                     css: 'webix_primary'
                 },
+
             ],
         },
         {
             rows: [
                 { view: 'template', type: 'header', template: Locale.addedUsers },
                 {
+                    //onContext: {},
                     view: 'datatable',
                     id: 'usersTable',
                     columns: [
@@ -79,6 +81,8 @@ const UI = {
                             id: 'division', header: Locale.division, width: 90,
                             template: item => Controller.getDivisionById(+item.division)
                         },
+                        { header: "", width: 110, css: "webix_primary", template: "<button class='webix_button book'>" + Locale.delete + "</button>" },
+
                         {
 
                             //Для варианта кнопки удаления определенного пользователя
@@ -103,7 +107,13 @@ const UI = {
                                 return '<button onclick=Model.updateItem(' + item.id + ')>' + Locale.update + '</button>'
                             }
                         },
-                    ]
+                    ],
+                    onClick: {
+                        "webix_button": function (e, id) {
+                            console.log('id= ', id);
+                            Model.deleteItem(id.row);
+                        }
+                    },
                 },
                 {
                     rows: [
@@ -132,8 +142,11 @@ const UI = {
                                     id: 'division', width: 90,
                                     template: item => Controller.getDivisionById(+item.division)
                                 },
-
                             ]
+                        },
+                        {
+                            id: "areaA",
+                            template: "aasdasd",
 
                         },
                     ],
@@ -141,6 +154,7 @@ const UI = {
             ]
         },
     ]
+
 }
 
 const Controller = {
@@ -157,6 +171,7 @@ const Controller = {
         this.elements.userForm = $$('userForm')
         this.elements.addUserBtn = $$('addUserBtn')
         this.elements.deleteUsersBtn = $$('deleteUsersBtn')
+        this.elements.deleteUserContextBtn = $$('deleteUserContextBtn')
         this.elements.saveUserBtn = $$('saveUserBtn')
         this.elements.usersTable = $$('usersTable')
         this.elements.userTable = $$('userTable')
@@ -183,6 +198,11 @@ const Controller = {
         this.elements.deleteUsersBtn.attachEvent('onItemClick', () => {
             Model.deleteItems();
         })
+
+        this.elements.deleteUserContextBtn.attachEvent('onItemClick', () => {
+            Model.deleteItem();
+        })
+
 
         this.elements.searchForm.attachEvent('onEnter', () => {
             console.log('search');
@@ -286,6 +306,8 @@ const Model = {
             if (this.data[i].id === itemId) {
                 console.log(this.data[i].id, "===", itemId);
                 this.data.splice(i, 1)
+            } else {
+                console.log(this.data[i].id, "===", itemId);
             }
         }
         Controller.refreshTable(this.data)
@@ -302,7 +324,7 @@ const Model = {
                     }
                 }
                 Controller.refreshTable(this.data)
-                console.log('this.data= ', this.data);
+                console.log('deleteItemS(): this.data= ', this.data);
             })
     },
 
@@ -329,8 +351,88 @@ const Model = {
         });
     }
 }
+/*
+webix.ready(function () {
+    webix.ui(UI)
+    webix.ui({
+        view: "contextmenu",
+        data: [
+            "More info", "Edit", "Delete record",
+            '<button onclick=Model.deleteItem()>' + Locale.delete + '</button>'
+        ],
+
+        on: {
+            onItemClick: function (id) {
+                var context = this.getContext();
+                var list = context.obj;
+                var listId = context.id;
+                console.log("List item: <i>" + context + "</i> <br/>Context menu item: <i>" + this.getItem(id).value + "</i>");
+                console.log(context);
+            }
+        }
+*/
+/*
+click: (id) => {
+    //webix.message('id= ', id);
+    console.log('id= ', id);
+    //console.log('item= ', item);
+}
+*/
+/*
+    }).attachTo($$("usersTable"));
+
+    Controller.init()
+})
+*/
 
 webix.ready(function () {
     webix.ui(UI)
+    webix.ui({
+        view: "contextmenu",
+        data: ["Удалить", "Редактировать"],
+        click: function (id, context) {
+            switch (id) {
+                case "Удалить":
+                    console.log('TRY TO DELETE');
+                    Model.deleteItem(this.getContext().id.row);
+                    break;
+
+                default:
+                    break;
+            }
+            console.log(id + " on row " + this.getContext().id);
+            console.log(id + " on row " + this.getContext().id.row);
+            console.log(this.getContext().id.row === this.getContext().id);
+            console.log(this.getContext().id);
+            console.log(this.getContext().id.row);
+            //console.log('context= ', context);
+        }
+
+    }).attachTo($$("usersTable"));
+
     Controller.init()
 })
+
+
+/*
+template: function (item) {
+    return '<button onclick=Model.deleteItem(' + item.id + ')>' + Locale.delete + '</button>'
+}
+*/
+/*
+webix.ui({
+    view: "contextmenu",
+    id: "cmenu",
+    data: ["Add", "Rename", "Delete", { $template: "Separator" }, "Info"],
+    on: {
+        onItemClick: function (id) {
+            var context = this.getContext();
+            var list = context.obj;
+            var listId = context.id;
+            webix.message("List item: <i>" + list.getItem(listId).title + "</i> <br/>Context menu item: <i>" + this.getItem(id).value + "</i>");
+        }
+    }
+});
+
+$$("cmenu").attachTo($$("$list1"));
+*/
