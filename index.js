@@ -30,9 +30,9 @@ const UI = {
                     view: 'form',
                     id: 'userForm',
                     elements: [
-                        { view: 'text', name: 'fio', label: Locale.fio, labelWidth: 120 },
-                        { view: 'text', name: 'email', label: Locale.email, labelWidth: 120 },
-                        { view: 'text', name: 'phone', label: Locale.phone, labelWidth: 120 },
+                        { view: 'text', name: 'fio', label: Locale.fio, invalidMessage: "Username can not be empty", labelWidth: 120 },
+                        { view: 'text', name: 'email', label: Locale.email, invalidMessage: "Empty or incorrect email", labelWidth: 120 },
+                        { view: 'text', name: 'phone', label: Locale.phone, invalidMessage: "Empty or incorrect phone", labelWidth: 120 },
                         {
                             view: 'checkbox', name: 'head', label: Locale.head, value: 1,
                             labelWidth: 120
@@ -53,7 +53,7 @@ const UI = {
                     css: 'webix_primary'
                 },
                 {
-                    view: 'button', id: 'saveUpdateUserBtn', value: Locale.save,
+                    view: 'button', id: 'saveUserBtn', value: Locale.save,
                     css: 'webix_primary'
                 },
             ],
@@ -90,7 +90,36 @@ const UI = {
                             }
                         },
                     ]
-                }
+                },
+                {
+                    rows: [
+                        //{ view: 'text', name: 'find', label: Locale.phone, labelWidth: 120, },
+                        //{ view: 'text', name: 'find', label: Locale.phone, labelWidth: 120, },
+                        {
+                            view: "search",
+                            placeholder: "Search..",
+                            id: 'searchForm',
+                        },
+                        {
+                            id: 'userTable',
+                            columns: [
+                                { id: 'fio', width: 90 },
+                                { id: 'email', width: 90 },
+                                { id: 'phone', width: 90 },
+                                {
+                                    id: 'head', width: 90,
+                                    template: item => item.head ? 'Да' : 'Нет'
+                                },
+                                {
+                                    id: 'division', width: 90,
+                                    template: item => Controller.getDivisionById(+item.division)
+                                },
+
+                            ]
+
+                        },
+                    ],
+                },
             ]
         },
     ]
@@ -99,6 +128,7 @@ const UI = {
 const Controller = {
 
     elements: {},
+    user: {},
 
     init() {
         this.initElements()
@@ -109,28 +139,51 @@ const Controller = {
         this.elements.userForm = $$('userForm')
         this.elements.addUserBtn = $$('addUserBtn')
         this.elements.deleteUserBtn = $$('deleteUserBtn')
+        this.elements.saveUserBtn = $$('saveUserBtn')
         this.elements.usersTable = $$('usersTable')
+        this.elements.userTable = $$('userTable')
+        this.elements.searchForm = $$('searchForm')
     },
 
     initEvents() {
         this.elements.addUserBtn.attachEvent('onItemClick', () => {
             //TODO: подсказка при валидации https://ru.docs.webix.com/desktop__data_validation.html
             //this.elements.userForm.validate() ? Model.addItem(this.elements.userForm.getValues()) : null;
-            console.log(this.elements);
+            //console.log(this.elements); 
             Model.addItem(this.elements.userForm.getValues());
         })
-        /*
-        this.elements.updateUserBtn.attachEvent('onItemClick', () => {
+
+        this.elements.saveUserBtn.attachEvent('onItemClick', () => {
             //TODO: подсказка при валидации https://ru.docs.webix.com/desktop__data_validation.html
             //this.elements.userForm.validate() ? Model.addItem(this.elements.userForm.getValues()) : null;
             console.log('update!');
+
+            Model.saveItem(this.elements.userForm.getValues());
         })
-        */
+
+        this.elements.searchForm.attachEvent('onEnter', () => {
+            console.log('search');
+            console.log('this.elements.searchForm= ', this.elements.searchForm.getValue());
+            Model.searchItem(this.elements.searchForm.getValue());
+        })
     },
 
     refreshTable(data) {
         this.elements.usersTable.clearAll();
         this.elements.usersTable.parse(data)
+        this.elements.userForm.clear();
+    },
+
+    refreshUserTable(user) {
+        if (user) {
+            console.log('refreshUserTable');
+            this.elements.userTable.parse(user);
+            //this.elements.userTable.clear();
+            //this.elements.userTable.parse(user)
+        } else {
+            console.log('ytn nfrb[');
+            'null'
+        }
     },
 
     getDivisionById(id) {
@@ -147,9 +200,42 @@ const Model = {
 
     data: [],
 
+    isExists(item) {
+        return this.data.find(dataItem => dataItem.phone == item.phone);
+    },
+
     addItem(item) {
-        this.data.push(item)
-        //console.log('adddata this.data=', this.data);
+        if (!this.isExists(item)) {
+            this.data.push(item)
+            //console.log('adddata this.data=', this.data);
+            Controller.refreshTable(this.data)
+        }
+    },
+
+    searchItem(text) {
+        //TODO: дополнить списком подходящих пользователей (а не первого подходящего)
+        const user = this.data.find(item => item.fio == text) || this.data.find(item => item.email == text) || this.data.find(item => item.phone == text);
+        console.log('user= ', user);
+        Controller.refreshUserTable(user);
+    },
+
+
+    saveItem(item) {
+        //let user = this.data.find(item => item.id == itemId);
+
+        console.log('data= ', this.data);
+        console.log('item= ', item);
+        const itemId = item.id;
+
+        for (let i = 0; i < this.data.length; i++) {
+            if (this.data[i].id === itemId) {
+                console.log(this.data[i].id, "===", itemId);
+                this.data.splice(i, 1, item)
+            } else {
+                console.log(this.data[i].id, "!", itemId);
+            }
+        }
+
         Controller.refreshTable(this.data)
     },
 
@@ -160,9 +246,7 @@ const Model = {
         for (let i = 0; i < this.data.length; i++) {
             if (this.data[i].id === itemId) {
                 console.log(this.data[i].id, "===", itemId);
-                console.log('this.data= ', this.data);
                 this.data.splice(i, 1)
-                console.log('this.data= ', this.data);
             }
         }
         Controller.refreshTable(this.data)
@@ -178,6 +262,7 @@ const Model = {
             phone: user.phone,
             head: user.head,
             division: user.division,
+            id: user.id,
         });
     }
 }
